@@ -39,6 +39,10 @@ describe Hdrhistogram do
   it "#initialize" do
     hist = HdrHistogram::Histogram.new(1, 3600000000i64, 3)
     hist.counts.size.should eq 23552
+    hist.bucket_count.should eq 22
+    hist.sub_bucket_count.should eq 2048
+    hist.unit_magnitude.should eq 0
+    hist.sub_bucket_half_count_magnitude.should eq 10
   end
 
   it "create with large values (sub_bucket_mask overflow)" do
@@ -96,11 +100,11 @@ describe Hdrhistogram do
     end
 
     it "#quantiles" do
-      h.value_at_quantile(30).should eq 1000.0
-      h.value_at_quantile(99).should eq 1000.0
-      h.value_at_quantile(99.99).should eq 1000.0
-      h.value_at_quantile(99.999).should eq 100000000.0
-      h.value_at_quantile(100).should eq 100000000.0
+      h.equal_values?(h.value_at_quantile(30), 1000.0).should be_true
+      h.equal_values?(h.value_at_quantile(99), 1000.0).should be_true
+      h.equal_values?(h.value_at_quantile(99.99), 1000.0).should be_true
+      h.equal_values?(h.value_at_quantile(99.999), 100000000.0).should be_true
+      h.equal_values?(h.value_at_quantile(100), 100000000.0).should be_true
     end
 
     it "iterates" do
@@ -133,7 +137,7 @@ describe Hdrhistogram do
     h.record_value(32768).should be_false
   end
 
-  it "linear iter" do
+  it "value iter" do
     h = HdrHistogram::Histogram.new(1, 255, 2)
     [193, 255, 0, 1, 64, 128].each do |i|
       h.record_value i
@@ -173,7 +177,7 @@ describe Hdrhistogram do
     h2 = HdrHistogram::Histogram.new(1, 1000, 3)
     100.times do |i|
       h.record_value(i)
-      h2.record_value(i + 1)
+      h2.record_value(i + 100)
     end
     h.merge(h2)
     h.value_at_quantile(50).should eq 99i64

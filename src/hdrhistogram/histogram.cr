@@ -73,7 +73,6 @@ struct HdrHistogram::Histogram
     each do |i|
       if i.count_at_index != 0 && min == 0
         min = i.highest_equivalent_value
-        break
       end
     end
     lowest_equivalent_value(min)
@@ -135,7 +134,7 @@ struct HdrHistogram::Histogram
     index = counts_index_for(value)
     if index < 0 || counts_size <= index
       puts "Value #{value} is too large to be recorded"
-      false
+      return false
     end
     @counts[index] += count
     @total_count += count
@@ -146,14 +145,13 @@ struct HdrHistogram::Histogram
     q = 100 if q > 100
     total = 0i64
     count_at_percentile = ((q.to_f64 / 100)*total_count.to_f64 + 0.5).to_i64
-    ret = 0
     each do |i|
       total += i.count_at_index
       if total >= count_at_percentile
-        ret = highest_equivalent_value(i.value_from_index)
+        return highest_equivalent_value(i.value_from_index)
       end
     end
-    ret
+    0i64
   end
 
   def each
@@ -168,8 +166,8 @@ struct HdrHistogram::Histogram
     end
   end
 
-  def each_percentile # FIXME
-    Iterator.new(self).each do |i|
+  def each_percentile(ticks_per_half_distance)
+    PercentileIterator.new(self, ticks_per_half_distance).each do |i|
       yield i
     end
   end
@@ -205,12 +203,11 @@ struct HdrHistogram::Histogram
   end
 
   def count_at_index(index, sub_index) # fixme
-    counts[index]
+    counts[counts_index(index, sub_index)]
   end
 
   def value_from_index(index, sub_index)
     sub_index.to_i64 << (index.to_i64 + unit_magnitude)
-    counts[index]
   end
 
   def size_of_equivalent_value_range(value)
@@ -254,7 +251,7 @@ struct HdrHistogram::Histogram
   def bucket_indices(value)
     bucket_index = bucket_index(value)
     sub_bucket_index = sub_bucket_index(value, bucket_index)
-    [bucket_index, sub_bucket_index]
+    {bucket_index, sub_bucket_index}
   end
 
   def bucket_index(value)
