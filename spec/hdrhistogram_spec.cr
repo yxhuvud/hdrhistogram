@@ -14,12 +14,12 @@ def raw_histogram
   h
 end
 
-# def cor_histogram
-#   h = HdrHistogram::Histogram.new(1, HIGHEST, SIGS)
-#   10000.times { h.record_corrected_value 1000 }
-#   h.record_corrected_value HIGH, INTERVAL
-#   h
-# end
+def cor_histogram
+  h = HdrHistogram::Histogram.new(1, HIGHEST, SIGS)
+  10000.times { h.record_corrected_value 1000, INTERVAL }
+  h.record_corrected_value HIGH, INTERVAL
+  h
+end
 
 def scaled_raw_histogram
   h = HdrHistogram::Histogram.new(1000, HIGHEST*512, SIGS)
@@ -28,12 +28,12 @@ def scaled_raw_histogram
   h
 end
 
-# def scaled_cor_histogram
-#   h = HdrHistogram::Histogram.new(1000, HIGHEST*512, SIGS)
-#   10000.times { h.record_corrected_value 1000 }
-#   h.record_corrected_value HIGH*SCALE, SCALED_INTERVAL
-#   h
-# end
+def scaled_cor_histogram
+  h = HdrHistogram::Histogram.new(1000, HIGHEST*512, SIGS)
+  10000.times { h.record_corrected_value 1000*SCALE, INTERVAL }
+  h.record_corrected_value HIGH*SCALE, SCALED_INTERVAL
+  h
+end
 
 describe Hdrhistogram do
   it "#initialize" do
@@ -122,6 +122,34 @@ describe Hdrhistogram do
     end
   end
 
+  describe "cor_histogram" do
+    h = cor_histogram
+
+    it "#total_count" do
+      h.total_count.should eq 20000
+    end
+
+    it "#max" do
+      h.equal_values?(h.max, 100000000)
+    end
+
+    it "#min" do
+      h.equal_values?(h.min, 1000)
+    end
+
+    it "#quantiles" do
+      h.equal_values?(h.value_at_quantile(30), 1000.0).should be_true
+      h.equal_values?(h.value_at_quantile(50), 1000.0).should be_true
+      h.equal_values?(h.value_at_quantile(75.0), 50_000_000.0).should be_true
+      h.equal_values?(h.value_at_quantile(90.0), 80_000_000.0).should be_true
+
+      h.equal_values?(h.value_at_quantile(99.0), 98_000_000.0).should be_true
+      h.equal_values?(h.value_at_quantile(99.999), 100000000.0).should be_true
+
+      h.equal_values?(h.value_at_quantile(100), 100000000.0).should be_true
+    end
+  end
+
   it "#reset" do
     h = raw_histogram
     h.total_count.should_not eq 0
@@ -142,7 +170,6 @@ describe Hdrhistogram do
     [193, 255, 0, 1, 64, 128].each do |i|
       h.record_value i
     end
-
     steps = 0
     total_count = 0
 
@@ -150,8 +177,8 @@ describe Hdrhistogram do
       total_count += i.count_at_index
       steps += 1
     end
-    steps.should eq 4
     total_count.should eq total_count
+    steps.should eq 4
   end
 
   it "#mean" do
@@ -191,5 +218,19 @@ describe Hdrhistogram do
   it "doesn't overflow unit magnitude" do
     h = HdrHistogram::Histogram.new(0, 200, 4)
     h.record_value(11).should be_true
+  end
+
+  context "corrected values" do
+    it "records corrected values" do
+      h = HdrHistogram::Histogram.new(1, 100000, 3)
+      h.record_corrected_value(10, 100).should be_true
+      h.value_at_quantile(70).should eq 10i64
+    end
+
+    it "corrected_values stall" do
+      h = HdrHistogram::Histogram.new(1, 100000, 3)
+      h.record_corrected_value(1000, 100).should be_true
+      h.value_at_quantile(75).should eq 800i64
+    end
   end
 end
