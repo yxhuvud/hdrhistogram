@@ -14,8 +14,8 @@ struct HDRHistogram::Histogram
   property total_count : Int64
   property counts
 
-  def initialize(min : Int64, max : Int64, sigfigs : Int32)
-    unless (1..5).includes?(sigfigs)
+  def initialize(min : Int64, max : Int64, significant_figures : Int32)
+    unless (1..5).includes?(significant_figures)
       raise "sigfigs must be in 1..5"
     end
     unless min * 2 <= max
@@ -23,7 +23,7 @@ struct HDRHistogram::Histogram
     end
     @lowest_trackable_value = min
     @highest_trackable_value = max
-    @significant_figures = sigfigs.to_i64
+    @significant_figures = significant_figures.to_i64
 
     @sub_bucket_half_count_magnitude = half_count_magnitude
     @unit_magnitude = unit_magnitude(min)
