@@ -1,4 +1,4 @@
-abstract struct HdrHistogram::AbstractIterator
+abstract struct HDRHistogram::AbstractIterator
   property histogram : Histogram
   property bucket_index : Int32
   property sub_bucket_index : Int32

@@ -1,4 +1,4 @@
-struct HdrHistogram::RecordedValuesIterator < HdrHistogram::AbstractIterator
+struct HDRHistogram::RecordedValuesIterator < HDRHistogram::AbstractIterator
   property count_added_this_step : Int64
 
   def initialize(histogram)

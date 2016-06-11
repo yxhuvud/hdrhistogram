@@ -1,4 +1,4 @@
-struct HdrHistogram::PercentileIterator < HdrHistogram::AbstractIterator
+struct HDRHistogram::PercentileIterator < HDRHistogram::AbstractIterator
   property seen_last_value : Bool
   property ticks_per_half_distance : Int32
   property percentile_to_iterator_to : Float64

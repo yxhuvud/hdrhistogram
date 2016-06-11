@@ -1,2 +1,2 @@
 require "spec"
-require "../src/hdrhistogram"
+require "../src/hdr_histogram"

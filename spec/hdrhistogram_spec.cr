@@ -8,36 +8,36 @@ SCALE           =           512
 SCALED_INTERVAL = INTERVAL * SCALE
 
 def raw_histogram
-  h = HdrHistogram::Histogram.new(1, HIGHEST, SIGS)
+  h = HDRHistogram.new(1, HIGHEST, SIGS)
   10000.times { h.record_value 1000 }
   h.record_value HIGH
   h
 end
 
 def cor_histogram
-  h = HdrHistogram::Histogram.new(1, HIGHEST, SIGS)
+  h = HDRHistogram.new(1, HIGHEST, SIGS)
   10000.times { h.record_corrected_value 1000, INTERVAL }
   h.record_corrected_value HIGH, INTERVAL
   h
 end
 
 def scaled_raw_histogram
-  h = HdrHistogram::Histogram.new(1000, HIGHEST*512, SIGS)
+  h = HDRHistogram.new(1000, HIGHEST*512, SIGS)
   10000.times { h.record_value 1000*SCALE }
   h.record_value HIGH*SCALE
   h
 end
 
 def scaled_cor_histogram
-  h = HdrHistogram::Histogram.new(1000, HIGHEST*512, SIGS)
+  h = HDRHistogram.new(1000, HIGHEST*512, SIGS)
   10000.times { h.record_corrected_value 1000*SCALE, INTERVAL }
   h.record_corrected_value HIGH*SCALE, SCALED_INTERVAL
   h
 end
 
-describe Hdrhistogram do
+describe HDRHistogram do
   it "#initialize" do
-    hist = HdrHistogram::Histogram.new(1, 3600000000i64, 3)
+    hist = HDRHistogram.new(1, 3600000000i64, 3)
     hist.counts.size.should eq 23552
     hist.bucket_count.should eq 22
     hist.sub_bucket_count.should eq 2048
@@ -46,7 +46,7 @@ describe Hdrhistogram do
   end
 
   it "create with large values (sub_bucket_mask overflow)" do
-    h = HdrHistogram::Histogram.new(20000000, 100000000, 5)
+    h = HDRHistogram.new(20000000, 100000000, 5)
     h.record_value 100000000
     h.record_value 20000000
     h.record_value 30000000
@@ -60,13 +60,13 @@ describe Hdrhistogram do
   it "has the correct amount of significant figures" do
     x = [459876, 669187, 711612, 816326, 931423, 1033197, 1131895, 2477317,
       3964974, 12718782]
-    hist = HdrHistogram::Histogram.new(459876, 12718782, 5)
+    hist = HDRHistogram.new(459876, 12718782, 5)
     x.each { |i| hist.record_value i }
     hist.value_at_quantile(50).should eq 1048575
   end
 
   it "#value_at_quantile" do
-    hist = HdrHistogram::Histogram.new(1, 10000000, 3)
+    hist = HDRHistogram.new(1, 10000000, 3)
     0.upto(1_000_000) do |i|
       hist.record_value(i)
     end
@@ -160,29 +160,29 @@ describe Hdrhistogram do
   end
 
   it "checks for out of range values" do
-    h = HdrHistogram::Histogram.new(1, 1000, 4)
+    h = HDRHistogram.new(1, 1000, 4)
     h.record_value(32767).should be_true
     h.record_value(32768).should be_false
   end
 
   it "value iter" do
-    h = HdrHistogram::Histogram.new(1, 255, 2)
+    h = HDRHistogram.new(1, 255, 2)
     [193, 255, 0, 1, 64, 128].each do |i|
       h.record_value i
     end
     steps = 0
     total_count = 0
 
-    h.each do |i|
+    h.each_value do |i|
       total_count += i.count_at_index
       steps += 1
     end
     total_count.should eq total_count
-    steps.should eq 4
+    steps.should eq 6
   end
 
   it "#mean" do
-    h = HdrHistogram::Histogram.new(1, 10000000, 3)
+    h = HDRHistogram.new(1, 10000000, 3)
     1000000.times do |i|
       unless h.record_value i
         true.should be_false
@@ -192,7 +192,7 @@ describe Hdrhistogram do
   end
 
   it "#std_dev" do
-    h = HdrHistogram::Histogram.new(1, 10000000, 3)
+    h = HDRHistogram.new(1, 10000000, 3)
     1000000.times do |i|
       h.record_value(i).should be_true
     end
@@ -200,8 +200,8 @@ describe Hdrhistogram do
   end
 
   it "#merge" do
-    h = HdrHistogram::Histogram.new(1, 1000, 3)
-    h2 = HdrHistogram::Histogram.new(1, 1000, 3)
+    h = HDRHistogram.new(1, 1000, 3)
+    h2 = HDRHistogram.new(1, 1000, 3)
     100.times do |i|
       h.record_value(i)
       h2.record_value(i + 100)
@@ -211,24 +211,24 @@ describe Hdrhistogram do
   end
 
   it "#byte_size" do
-    h = HdrHistogram::Histogram.new(1, 100000, 3)
+    h = HDRHistogram.new(1, 100000, 3)
     h.bytesize.should eq 65616
   end
 
   it "doesn't overflow unit magnitude" do
-    h = HdrHistogram::Histogram.new(0, 200, 4)
+    h = HDRHistogram.new(0, 200, 4)
     h.record_value(11).should be_true
   end
 
   context "corrected values" do
     it "records corrected values" do
-      h = HdrHistogram::Histogram.new(1, 100000, 3)
+      h = HDRHistogram.new(1, 100000, 3)
       h.record_corrected_value(10, 100).should be_true
       h.value_at_quantile(70).should eq 10i64
     end
 
     it "corrected_values stall" do
-      h = HdrHistogram::Histogram.new(1, 100000, 3)
+      h = HDRHistogram.new(1, 100000, 3)
       h.record_corrected_value(1000, 100).should be_true
       h.value_at_quantile(75).should eq 800i64
     end

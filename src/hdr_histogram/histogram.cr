@@ -1,6 +1,6 @@
 require "math"
 
-struct HdrHistogram::Histogram
+struct HDRHistogram::Histogram
   property lowest_trackable_value : Int64
   property highest_trackable_value : Int64
   property unit_magnitude : Int64
@@ -47,7 +47,7 @@ struct HdrHistogram::Histogram
 
   def merge(other : Histogram)
     dropped = 0i64
-    other.each_value do |i|
+    other.each_bucket do |i|
       value, count = i.value_from_index, i.count_at_index
       unless record_values(value, count)
         dropped += count
@@ -59,7 +59,7 @@ struct HdrHistogram::Histogram
   # approximate
   def max
     max = 0i64
-    each do |i|
+    each_bucket do |i|
       if i.count_at_index != 0
         max = i.highest_equivalent_value
       end
@@ -70,7 +70,7 @@ struct HdrHistogram::Histogram
   # approximate
   def min
     min = 0i64
-    each do |i|
+    each_bucket do |i|
       if i.count_at_index != 0 && min == 0
         min = i.highest_equivalent_value
       end
@@ -82,7 +82,7 @@ struct HdrHistogram::Histogram
   def mean
     return 0 if total_count == 0
     total = 0i64
-    each do |i|
+    each_bucket do |i|
       if i.count_at_index != 0
         total += i.count_at_index * median_equivalent_value(i.value_from_index)
       end
@@ -95,7 +95,7 @@ struct HdrHistogram::Histogram
     return 0 if total_count == 0
     mean = mean
     geometric_dev_total = 0.0
-    each do |i|
+    each_bucket do |i|
       if i.count_at_index != 0
         dev = median_equivalent_value(i.value_from_index) - mean
         geometric_dev_total += (dev * dev) * i.count_at_index
@@ -153,7 +153,7 @@ struct HdrHistogram::Histogram
     q = 100 if q > 100
     total = 0i64
     count_at_percentile = ((q.to_f64 / 100) * total_count.to_f64 + 0.5).to_i64
-    each do |i|
+    each_bucket do |i|
       total += i.count_at_index
       if total >= count_at_percentile
         return highest_equivalent_value(i.value_from_index)
@@ -162,7 +162,7 @@ struct HdrHistogram::Histogram
     0i64
   end
 
-  def each
+  def each_bucket
     Iterator.new(self).each do |i|
       yield i
     end
@@ -210,7 +210,7 @@ struct HdrHistogram::Histogram
     magnitude < 0 ? 0i64 : magnitude.to_i64
   end
 
-  def count_at_index(index, sub_index) # fixme
+  def count_at_index(index, sub_index)
     counts[counts_index(index, sub_index)]
   end
 
