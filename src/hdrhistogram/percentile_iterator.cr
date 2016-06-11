@@ -4,7 +4,6 @@ struct HdrHistogram::PercentileIterator < HdrHistogram::AbstractIterator
   property percentile_to_iterator_to : Float64
   property percentile : Float64
 
-
   def initialize(histogram, @ticks_per_half_distance)
     super(histogram)
     @seen_last_value = false

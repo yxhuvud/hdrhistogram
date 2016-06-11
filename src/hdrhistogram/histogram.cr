@@ -152,7 +152,7 @@ struct HdrHistogram::Histogram
   def value_at_quantile(q)
     q = 100 if q > 100
     total = 0i64
-    count_at_percentile = ((q.to_f64 / 100)*total_count.to_f64 + 0.5).to_i64
+    count_at_percentile = ((q.to_f64 / 100) * total_count.to_f64 + 0.5).to_i64
     each do |i|
       total += i.count_at_index
       if total >= count_at_percentile
@@ -184,9 +184,9 @@ struct HdrHistogram::Histogram
     lowest_equivalent_value(a.to_i64) == lowest_equivalent_value(b.to_i64)
   end
 
-  # ############## # fixme private
+  ############### Private or de facto private (with access only for iterators)
 
-  def buckets_needed(max)
+  private def buckets_needed(max)
     # determine exponent range needed to support the trackable value
     # with no overflow
     smallest_untrackable_value = sub_bucket_count.to_i64 << unit_magnitude
@@ -198,14 +198,14 @@ struct HdrHistogram::Histogram
     needed
   end
 
-  def half_count_magnitude
+  private def half_count_magnitude
     largest_value_with_single_unit_resolution = 2 * 10**@significant_figures
     whole_count_magnitude =
       Math.log2(largest_value_with_single_unit_resolution).ceil
     whole_count_magnitude > 1 ? (whole_count_magnitude - 1).to_i32 : 0
   end
 
-  def unit_magnitude(min)
+  private def unit_magnitude(min)
     magnitude = Math.log2(min).floor
     magnitude < 0 ? 0i64 : magnitude.to_i64
   end
@@ -218,7 +218,7 @@ struct HdrHistogram::Histogram
     sub_index.to_i64 << (index.to_i64 + unit_magnitude)
   end
 
-  def size_of_equivalent_value_range(value)
+  private def size_of_equivalent_value_range(value)
     bucket_index, sub_bucket_index = bucket_indices(value)
     adjusted_bucket = bucket_index
     if sub_bucket_index >= sub_bucket_count
@@ -231,7 +231,7 @@ struct HdrHistogram::Histogram
     next_non_equivalent(value) - 1
   end
 
-  def next_non_equivalent(value)
+  private def next_non_equivalent(value)
     lowest_equivalent_value(value) + size_of_equivalent_value_range(value)
   end
 
@@ -245,34 +245,34 @@ struct HdrHistogram::Histogram
       (size_of_equivalent_value_range(value) >> 1)
   end
 
-  def counts_index(bucket_index, sub_bucket_index)
+  private def counts_index(bucket_index, sub_bucket_index)
     base_index = (bucket_index + 1) << sub_bucket_half_count_magnitude
     offset_in_bucket = sub_bucket_index - sub_bucket_half_count
     base_index + offset_in_bucket
   end
 
-  def counts_index_for(value)
+  private def counts_index_for(value)
     bucket_index, sub_bucket_index = bucket_indices(value)
     counts_index(bucket_index, sub_bucket_index)
   end
 
-  def bucket_indices(value)
+  private def bucket_indices(value)
     bucket_index = bucket_index(value)
     sub_bucket_index = sub_bucket_index(value, bucket_index)
     {bucket_index, sub_bucket_index}
   end
 
-  def bucket_index(value)
+  private def bucket_index(value)
     pow_to_ceiling = bit_size(value | sub_bucket_mask)
     (pow_to_ceiling - unit_magnitude -
       (sub_bucket_half_count_magnitude + 1).to_i64).to_i32
   end
 
-  def sub_bucket_index(value, index)
+  private def sub_bucket_index(value, index)
     (value >> index + unit_magnitude).to_i32
   end
 
-  def bit_size(value : Int64)
+  private def bit_size(value : Int64)
     # Seems llvm has a builtin for counting leading zeroes,
     # llvm-clz. Dunno how to call that.
     n = 0i64
