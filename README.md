@@ -11,7 +11,7 @@ performance sensitive applications. The memory footprint is constant
 (depending only on precision), as is the work required to record a
 value.
 
-Implementation heavily inspired [HdrHistogram](hdrhistogram.org) by
+Implementation heavily inspired [HdrHistogram](http://hdrhistogram.org) by
 Gil Tene and the different implementations that can be found on the
 project site. All errors are original content and not present in the
 original.
