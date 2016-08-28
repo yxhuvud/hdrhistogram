@@ -184,7 +184,7 @@ struct HDRHistogram::Histogram
     lowest_equivalent_value(a.to_i64) == lowest_equivalent_value(b.to_i64)
   end
 
-  ############### Private or de facto private (with access only for iterators)
+  # ############## Private or de facto private (with access only for iterators)
 
   private def buckets_needed(max)
     # determine exponent range needed to support the trackable value
