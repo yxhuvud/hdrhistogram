@@ -149,7 +149,7 @@ struct HDRHistogram::Histogram
     true
   end
 
-  def value_at_quantile(q)
+  def value_at_percentile(q)
     q = 100 if q > 100
     total = 0i64
     count_at_percentile = ((q.to_f64 / 100) * total_count.to_f64 + 0.5).to_i64

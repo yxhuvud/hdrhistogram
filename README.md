@@ -61,7 +61,7 @@ It is possible to query a histogram for properties:
 
 ```crystal
 count = histogram.total_count
-value = histogram.value_at_quantile(99.9)
+value = histogram.value_at_percentile(99.9)
 ```
 
 It is possible to iterate over the values:

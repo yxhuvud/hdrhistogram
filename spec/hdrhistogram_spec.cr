@@ -51,10 +51,10 @@ describe HDRHistogram do
     h.record_value 20000000
     h.record_value 30000000
     h.total_count.should eq 3
-    h.equal_values?(h.value_at_quantile(50), 20000000).should be_true
-    h.equal_values?(h.value_at_quantile(83.33), 30000000).should be_true
-    h.equal_values?(h.value_at_quantile(83.34), 100000000).should be_true
-    h.equal_values?(h.value_at_quantile(99.0), 100000000).should be_true
+    h.equal_values?(h.value_at_percentile(50), 20000000).should be_true
+    h.equal_values?(h.value_at_percentile(83.33), 30000000).should be_true
+    h.equal_values?(h.value_at_percentile(83.34), 100000000).should be_true
+    h.equal_values?(h.value_at_percentile(99.0), 100000000).should be_true
   end
 
   it "has the correct amount of significant figures" do
@@ -62,10 +62,10 @@ describe HDRHistogram do
       3964974, 12718782]
     hist = HDRHistogram.new(459876, 12718782, 5)
     x.each { |i| hist.record_value i }
-    hist.value_at_quantile(50).should eq 1048575
+    hist.value_at_percentile(50).should eq 1048575
   end
 
-  it "#value_at_quantile" do
+  it "#value_at_percentile" do
     hist = HDRHistogram.new(1, 10000000, 3)
     0.upto(1_000_000) do |i|
       hist.record_value(i)
@@ -80,7 +80,7 @@ describe HDRHistogram do
       99.99 => 999935,
     }
     data.each { |q, v|
-      [q, hist.value_at_quantile(q)].should eq [q, v]
+      [q, hist.value_at_percentile(q)].should eq [q, v]
     }
   end
 
@@ -99,12 +99,12 @@ describe HDRHistogram do
       h.equal_values?(h.min, 1000)
     end
 
-    it "#quantiles" do
-      h.equal_values?(h.value_at_quantile(30), 1000.0).should be_true
-      h.equal_values?(h.value_at_quantile(99), 1000.0).should be_true
-      h.equal_values?(h.value_at_quantile(99.99), 1000.0).should be_true
-      h.equal_values?(h.value_at_quantile(99.999), 100000000.0).should be_true
-      h.equal_values?(h.value_at_quantile(100), 100000000.0).should be_true
+    it "#percentiles" do
+      h.equal_values?(h.value_at_percentile(30), 1000.0).should be_true
+      h.equal_values?(h.value_at_percentile(99), 1000.0).should be_true
+      h.equal_values?(h.value_at_percentile(99.99), 1000.0).should be_true
+      h.equal_values?(h.value_at_percentile(99.999), 100000000.0).should be_true
+      h.equal_values?(h.value_at_percentile(100), 100000000.0).should be_true
     end
 
     it "iterates" do
@@ -137,25 +137,25 @@ describe HDRHistogram do
       h.equal_values?(h.min, 1000)
     end
 
-    it "#quantiles" do
-      h.equal_values?(h.value_at_quantile(30), 1000.0).should be_true
-      h.equal_values?(h.value_at_quantile(50), 1000.0).should be_true
-      h.equal_values?(h.value_at_quantile(75.0), 50_000_000.0).should be_true
-      h.equal_values?(h.value_at_quantile(90.0), 80_000_000.0).should be_true
+    it "#percentiles" do
+      h.equal_values?(h.value_at_percentile(30), 1000.0).should be_true
+      h.equal_values?(h.value_at_percentile(50), 1000.0).should be_true
+      h.equal_values?(h.value_at_percentile(75.0), 50_000_000.0).should be_true
+      h.equal_values?(h.value_at_percentile(90.0), 80_000_000.0).should be_true
 
-      h.equal_values?(h.value_at_quantile(99.0), 98_000_000.0).should be_true
-      h.equal_values?(h.value_at_quantile(99.999), 100000000.0).should be_true
+      h.equal_values?(h.value_at_percentile(99.0), 98_000_000.0).should be_true
+      h.equal_values?(h.value_at_percentile(99.999), 100000000.0).should be_true
 
-      h.equal_values?(h.value_at_quantile(100), 100000000.0).should be_true
+      h.equal_values?(h.value_at_percentile(100), 100000000.0).should be_true
     end
   end
 
   it "#reset" do
     h = raw_histogram
     h.total_count.should_not eq 0
-    h.value_at_quantile(99.0).should_not eq 0
+    h.value_at_percentile(99.0).should_not eq 0
     h.reset
-    h.value_at_quantile(99.0).should eq 0
+    h.value_at_percentile(99.0).should eq 0
     h.total_count.should eq 0
   end
 
@@ -207,7 +207,7 @@ describe HDRHistogram do
       h2.record_value(i + 100)
     end
     h.merge(h2)
-    h.value_at_quantile(50).should eq 99i64
+    h.value_at_percentile(50).should eq 99i64
   end
 
   it "#byte_size" do
@@ -224,13 +224,13 @@ describe HDRHistogram do
     it "records corrected values" do
       h = HDRHistogram.new(1, 100000, 3)
       h.record_corrected_value(10, 100).should be_true
-      h.value_at_quantile(70).should eq 10i64
+      h.value_at_percentile(70).should eq 10i64
     end
 
     it "corrected_values stall" do
       h = HDRHistogram.new(1, 100000, 3)
       h.record_corrected_value(1000, 100).should be_true
-      h.value_at_quantile(75).should eq 800i64
+      h.value_at_percentile(75).should eq 800i64
     end
   end
 end
