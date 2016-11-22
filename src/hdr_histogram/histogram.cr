@@ -93,7 +93,7 @@ struct HDRHistogram::Histogram
   # approximate
   def std_dev
     return 0 if total_count == 0
-    mean = mean
+    mean = mean()
     geometric_dev_total = 0.0
     each_bucket do |i|
       if i.count_at_index != 0
