@@ -19,7 +19,7 @@ struct HDRHistogram::Histogram
       raise "sigfigs must be in 1..5"
     end
     unless min * 2 <= max
-      raise "min must be less than half of the max value"
+      raise "min (%s) must be less than half of the max (%s) value" % {min, max}
     end
     @lowest_trackable_value = min
     @highest_trackable_value = max
