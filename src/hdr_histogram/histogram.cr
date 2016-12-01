@@ -126,7 +126,7 @@ struct HDRHistogram::Histogram
   #  are recording ad-hoc values (e.g., latency for incoming requests)
   #  can't take advantage of this.
   def record_corrected_value(value, expected_interval, count = 1i64)
-    return false unless record_value(value)
+    return false unless record_values(value, count)
     return true if expected_interval <= 0 || value <= expected_interval
 
     missing_value = value - expected_interval
