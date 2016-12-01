@@ -16,7 +16,7 @@ struct HDRHistogram::Histogram
 
   def initialize(min : Int64, max : Int64, significant_figures : Int32)
     unless (1..5).includes?(significant_figures)
-      raise "sigfigs must be in 1..5"
+      raise "sigfigs must be in 1..5, #{significant_figures} is not."
     end
     unless min * 2 <= max
       raise "min (%s) must be less than half of the max (%s) value" % {min, max}
