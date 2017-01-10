@@ -2,17 +2,17 @@ require "zlib"
 
 module HDRHistogram
   module Codec
-    def self.convert(type, slice_or_io)
-      IO::ByteFormat::BigEndian.decode(type, slice_or_io)
-    end
+    BigEndian       = IO::ByteFormat::BigEndian
+    INTERNAL_COOKIE = 478450451
+    EXTERNAL_COOKIE = 478450452
 
     def self.zigzag_decode(io)
       size = 1
-      v = convert(Int8, io)
+      v = BigEndian.decode(Int8, io)
       value = Int64.new((v & 0x7F))
       while v & 0x80 != 0 && size < 9
         offset = size * 7
-        v = convert(Int8, io)
+        v = BigEndian.decode(Int8, io)
         val = size == 8 ? Int64.new(v) : Int64.new((v & 0x7F))
         value |= val << offset
         size += 1
@@ -23,22 +23,22 @@ module HDRHistogram
     def self.decode(str)
       decoded = Base64.decode str
 
-      cookie = convert(Int32, decoded[0, 4])
-      length = convert(Int32, decoded[4, 4])
-      raise "Invalid cookie" unless cookie == 478450452
+      cookie = BigEndian.decode(Int32, decoded[0, 4])
+      length = BigEndian.decode(Int32, decoded[4, 4])
+      raise "Invalid cookie" unless cookie == EXTERNAL_COOKIE
 
       io = IO::Memory.new(decoded + 8)
       inflator = Zlib::Inflate.new(io)
 
-      internal_cookie = convert(Int32, inflator)
-      internal_length = convert(Int32, inflator)
-      raise "Invalid internal cookie" unless internal_cookie == 478450451
+      internal_cookie = BigEndian.decode(Int32, inflator)
+      internal_length = BigEndian.decode(Int32, inflator)
+      raise "Invalid internal cookie" unless internal_cookie == INTERNAL_COOKIE
 
-      index_offset = convert(Int32, inflator) # ?
-      significant_figures = convert(Int32, inflator)
-      min = convert(Int64, inflator)
-      max = convert(Int64, inflator)
-      conversion_ratio = convert(Float64, inflator)
+      index_offset = BigEndian.decode(Int32, inflator) # ?
+      significant_figures = BigEndian.decode(Int32, inflator)
+      min = BigEndian.decode(Int64, inflator)
+      max = BigEndian.decode(Int64, inflator)
+      conversion_ratio = BigEndian.decode(Float64, inflator)
 
       histogram = HDRHistogram.new min, max, significant_figures
 
