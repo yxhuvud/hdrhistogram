@@ -42,16 +42,15 @@ module HDRHistogram
 
       histogram = HDRHistogram.new min, max, significant_figures
 
-      consumed = 0
       index = 0
-      while consumed < internal_length
-        value, size = zigzag_decode(inflator)
-        consumed += size
-        if value < 0
-          index -= value
+      while internal_length > 0
+        count, size = zigzag_decode(inflator)
+        internal_length -= size
+        if count < 0
+          index -= count
         else
-          histogram.counts[index] = value
-          histogram.total_count += value
+          histogram.counts[index] = count
+          histogram.total_count += count
           index += 1
         end
       end
