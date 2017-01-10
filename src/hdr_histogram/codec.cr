@@ -6,31 +6,40 @@ module HDRHistogram
       IO::ByteFormat::BigEndian.decode(type, slice_or_io)
     end
 
-    def self.zigzag_decode(io, length)
+    def self.zigzag_decode(io)
+      size = 1
       v = convert(Int8, io)
       value = Int64.new(v & 0x7f)
       if v & 0x80 != 0
+        size = 2
         v = convert(Int8, io)
         value |= Int64.new((v & 0x7F)) << 7
         if ((v & 0x80) != 0)
+          size = 3
           v = convert(Int8, io)
           value |= Int64.new((v & 0x7F)) << 14
           if ((v & 0x80) != 0)
+            size = 4
             v = convert(Int8, io)
             value |= Int64.new((v & 0x7F)) << 21
             if ((v & 0x80) != 0)
+              size = 5
               v = convert(Int8, io)
               value |= Int64.new((v & 0x7F)) << 28
               if ((v & 0x80) != 0)
+                size = 6
                 v = convert(Int8, io)
                 value |= Int64.new((v & 0x7F)) << 35
                 if ((v & 0x80) != 0)
+                  size = 7
                   v = convert(Int8, io)
                   value |= Int64.new((v & 0x7F)) << 42
                   if ((v & 0x80) != 0)
+                    size = 8
                     v = convert(Int8, io)
                     value |= Int64.new((v & 0x7F)) << 49
                     if ((v & 0x80) != 0)
+                      size = 9
                       v = convert(Int8, io)
                       value |= Int64.new(v) << 56
                     end
@@ -41,7 +50,7 @@ module HDRHistogram
           end
         end
       end
-      (value >> 1) ^ -(value & 1)
+      {(value >> 1) ^ -(value & 1), size}
     end
 
     def self.decode(str)
@@ -66,23 +75,18 @@ module HDRHistogram
 
       histogram = HDRHistogram.new min, max, significant_figures
 
-      values = Array(Int64).new
-      # Fixme: manually read internal_length slices on crystal 0.20+
-      # No good way to check that it is done in 0.19 :(
-      begin
-        while true
-          values << zigzag_decode(inflator, length)
-        end
-      rescue IO::EOFError
-      end
-      values.reduce(0) do |index, value|
+      consumed = 0
+      index = 0
+      while consumed < internal_length
+        value, size = zigzag_decode(inflator)
+        consumed += size
         if value < 0
-          index = index - value
-          next index
+          index -= value
+        else
+          histogram.counts[index] = value
+          histogram.total_count += value
+          index += 1
         end
-        histogram.counts[index] = value
-        histogram.total_count += value
-        index + 1
       end
       histogram
     end
