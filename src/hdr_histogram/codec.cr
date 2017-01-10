@@ -20,6 +20,55 @@ module HDRHistogram
       {(value >> 1) ^ -(value & 1), size}
     end
 
+    def self.zigzag_encode(n, io)
+      n = n < 0 ? ((n + 1).abs.to_u32 << 1) + 1 : n.to_u32 << 1
+      while true
+        bits = UInt8.new(n & 0x7F)
+        n >>= 7
+        break if n == 0
+        BigEndian.encode(bits | 0x80, io)
+      end
+      BigEndian.encode(bits, io)
+    end
+
+    def self.encode(histogram)
+      counts = IO::Memory.new
+      negative_count = 0
+      histogram.counts.each do |count|
+        if count == 0
+          negative_count += 1
+        else
+          if negative_count > 0
+            zigzag_encode(-negative_count, counts)
+            negative_count = 0
+          end
+          zigzag_encode(count, counts)
+        end
+      end
+
+      internal = IO::Memory.new
+      BigEndian.encode(INTERNAL_COOKIE, internal)
+      BigEndian.encode(counts.size, internal)
+
+      index_offset = 0i32 # ?
+      BigEndian.encode(index_offset, internal)
+      BigEndian.encode(histogram.significant_figures.to_i32, internal)
+      BigEndian.encode(histogram.lowest_trackable_value, internal)
+      BigEndian.encode(histogram.highest_trackable_value, internal)
+
+      conversion_ratio = 1.0f64 # conversion ratio ?
+      BigEndian.encode(conversion_ratio, internal)
+      internal.write counts.to_slice
+
+      output = IO::Memory.new
+      BigEndian.encode(EXTERNAL_COOKIE, output)
+      BigEndian.encode(internal.size, output)
+      Zlib::Deflate.new(output) do |deflator|
+        deflator.write internal.to_slice
+      end
+      Base64.strict_encode output.to_slice
+    end
+
     def self.decode(str)
       decoded = Base64.decode str
 
