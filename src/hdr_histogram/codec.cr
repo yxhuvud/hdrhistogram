@@ -2,42 +2,36 @@ require "zlib"
 
 module HDRHistogram
   module Codec
-    # fixme, crystal 0.21:
-    # use IO::ByteFormat::BigEndian.decode(Int32, bytes_or_io)
-    macro convert(type, slice)
-      {{type}}.from_io(MemoryIO.new({{slice}}), IO::ByteFormat::BigEndian)
-    end
-
-    macro convert_io(type, io)
-      {{type}}.from_io({{io}}, IO::ByteFormat::BigEndian)
+    def self.convert(type, slice_or_io)
+      IO::ByteFormat::BigEndian.decode(type, slice_or_io)
     end
 
     def self.zigzag_decode(io, length)
-      v = convert_io(Int8, io)
+      v = convert(Int8, io)
       value = Int64.new(v & 0x7f)
       if v & 0x80 != 0
-        v = convert_io(Int8, io)
+        v = convert(Int8, io)
         value |= Int64.new((v & 0x7F)) << 7
         if ((v & 0x80) != 0)
-          v = convert_io(Int8, io)
+          v = convert(Int8, io)
           value |= Int64.new((v & 0x7F)) << 14
           if ((v & 0x80) != 0)
-            v = convert_io(Int8, io)
+            v = convert(Int8, io)
             value |= Int64.new((v & 0x7F)) << 21
             if ((v & 0x80) != 0)
-              v = convert_io(Int8, io)
+              v = convert(Int8, io)
               value |= Int64.new((v & 0x7F)) << 28
               if ((v & 0x80) != 0)
-                v = convert_io(Int8, io)
+                v = convert(Int8, io)
                 value |= Int64.new((v & 0x7F)) << 35
                 if ((v & 0x80) != 0)
-                  v = convert_io(Int8, io)
+                  v = convert(Int8, io)
                   value |= Int64.new((v & 0x7F)) << 42
                   if ((v & 0x80) != 0)
-                    v = convert_io(Int8, io)
+                    v = convert(Int8, io)
                     value |= Int64.new((v & 0x7F)) << 49
                     if ((v & 0x80) != 0)
-                      v = convert_io(Int8, io)
+                      v = convert(Int8, io)
                       value |= Int64.new(v) << 56
                     end
                   end
@@ -57,19 +51,18 @@ module HDRHistogram
       length = convert(Int32, decoded[4, 4])
       raise "Invalid cookie" unless cookie == 478450452
 
-      # Fixme use IO::memory: crystal 20.
-      io = MemoryIO.new(decoded + 8)
+      io = IO::Memory.new(decoded + 8)
       inflator = Zlib::Inflate.new(io)
 
-      internal_cookie = convert_io(Int32, inflator)
-      internal_length = convert_io(Int32, inflator)
+      internal_cookie = convert(Int32, inflator)
+      internal_length = convert(Int32, inflator)
       raise "Invalid internal cookie" unless internal_cookie == 478450451
 
-      index_offset = convert_io(Int32, inflator) # ?
-      significant_figures = convert_io(Int32, inflator)
-      min = convert_io(Int64, inflator)
-      max = convert_io(Int64, inflator)
-      conversion_ratio = convert_io(Float64, inflator)
+      index_offset = convert(Int32, inflator) # ?
+      significant_figures = convert(Int32, inflator)
+      min = convert(Int64, inflator)
+      max = convert(Int64, inflator)
+      conversion_ratio = convert(Float64, inflator)
 
       histogram = HDRHistogram.new min, max, significant_figures
 
