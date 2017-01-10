@@ -41,6 +41,10 @@ struct HDRHistogram::Histogram
     initialize(min.to_i64, max.to_i64, sigfigs)
   end
 
+  def empty?
+    @total_count == 0
+  end
+
   def bytesize
     sizeof(self) + sizeof(Int64) * counts_size
   end
