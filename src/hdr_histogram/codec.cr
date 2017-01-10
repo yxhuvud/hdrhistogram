@@ -9,46 +9,13 @@ module HDRHistogram
     def self.zigzag_decode(io)
       size = 1
       v = convert(Int8, io)
-      value = Int64.new(v & 0x7f)
-      if v & 0x80 != 0
-        size = 2
+      value = Int64.new((v & 0x7F))
+      while v & 0x80 != 0 && size < 9
+        offset = size * 7
         v = convert(Int8, io)
-        value |= Int64.new((v & 0x7F)) << 7
-        if ((v & 0x80) != 0)
-          size = 3
-          v = convert(Int8, io)
-          value |= Int64.new((v & 0x7F)) << 14
-          if ((v & 0x80) != 0)
-            size = 4
-            v = convert(Int8, io)
-            value |= Int64.new((v & 0x7F)) << 21
-            if ((v & 0x80) != 0)
-              size = 5
-              v = convert(Int8, io)
-              value |= Int64.new((v & 0x7F)) << 28
-              if ((v & 0x80) != 0)
-                size = 6
-                v = convert(Int8, io)
-                value |= Int64.new((v & 0x7F)) << 35
-                if ((v & 0x80) != 0)
-                  size = 7
-                  v = convert(Int8, io)
-                  value |= Int64.new((v & 0x7F)) << 42
-                  if ((v & 0x80) != 0)
-                    size = 8
-                    v = convert(Int8, io)
-                    value |= Int64.new((v & 0x7F)) << 49
-                    if ((v & 0x80) != 0)
-                      size = 9
-                      v = convert(Int8, io)
-                      value |= Int64.new(v) << 56
-                    end
-                  end
-                end
-              end
-            end
-          end
-        end
+        val = size == 8 ? Int64.new(v) : Int64.new((v & 0x7F))
+        value |= val << offset
+        size += 1
       end
       {(value >> 1) ^ -(value & 1), size}
     end
