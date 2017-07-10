@@ -35,12 +35,12 @@ dependencies:
 
 ## Usage
 
-First create a histogram:
+First create a histogram with minimum, maximu and the amount of significant figures:
 
 ```crystal
 require "hdr_histogram"
 
-histogram = HDRHistogram.new(1, 60, 60 * 1000, 2)
+histogram = HDRHistogram.new(1, 60 * 1000, 2)
 
 ```
 
