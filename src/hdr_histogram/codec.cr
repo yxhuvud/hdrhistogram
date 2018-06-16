@@ -63,7 +63,7 @@ module HDRHistogram
       output = IO::Memory.new
       BigEndian.encode(EXTERNAL_COOKIE, output)
       BigEndian.encode(internal.size, output)
-      Zlib::Deflate.new(output) do |deflator|
+      Zlib::Writer.open(output) do |deflator|
         deflator.write internal.to_slice
       end
       Base64.strict_encode output.to_slice
@@ -77,7 +77,7 @@ module HDRHistogram
       raise "Invalid cookie" unless cookie == EXTERNAL_COOKIE
 
       io = IO::Memory.new(decoded + 8)
-      inflator = Zlib::Inflate.new(io)
+      inflator = Zlib::Reader.new(io)
 
       internal_cookie = BigEndian.decode(Int32, inflator)
       internal_length = BigEndian.decode(Int32, inflator)
