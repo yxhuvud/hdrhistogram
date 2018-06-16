@@ -25,7 +25,7 @@ describe HDRHistogram do
 
   it "has the correct amount of significant figures" do
     x = [459876, 669187, 711612, 816326, 931423, 1033197, 1131895, 2477317,
-      3964974, 12718782]
+         3964974, 12718782]
     hist = HDRHistogram.new(459876, 12718782, 5)
     x.each { |i| hist.record_value i }
     hist.value_at_percentile(50).should eq 1048575

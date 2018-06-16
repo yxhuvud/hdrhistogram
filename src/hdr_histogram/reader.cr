@@ -105,8 +105,8 @@ class HDRHistogram::Reader
     scanner.scan(regexp)
     # Note: max time can be inferred from the histogram, so don't bother returning it.
     {Float64.new(scanner["start_time"]),
-      Float64.new(scanner["interval_length"]),
-      scanner["payload"]}
+     Float64.new(scanner["interval_length"]),
+     scanner["payload"]}
   end
 
   def parse_payload(str)
