@@ -54,7 +54,7 @@ struct HDRHistogram::Histogram
     other.each_bucket do |i|
       value, count = i.value_from_index, i.count_at_index
       unless record_values(value, count)
-        dropped += count
+        dropped &+= count
       end
     end
     dropped
@@ -129,10 +129,10 @@ struct HDRHistogram::Histogram
     return false unless record_values(value, count)
     return true if expected_interval <= 0 || value <= expected_interval
 
-    missing_value = value - expected_interval
+    missing_value = value &- expected_interval
     while missing_value >= expected_interval
       return false unless record_values(missing_value, count)
-      missing_value -= expected_interval
+      missing_value &-= expected_interval
     end
     true
   end
@@ -148,8 +148,8 @@ struct HDRHistogram::Histogram
       puts "Value #{value} is too large to be recorded"
       return false
     end
-    @counts[index] += count
-    @total_count += count
+    @counts[index] &+= count
+    @total_count &+= count
     true
   end
 
@@ -158,7 +158,7 @@ struct HDRHistogram::Histogram
     total = 0i64
     count_at_percentile = ((q.to_f64 / 100) * total_count.to_f64 + 0.5).to_i64
     each_bucket do |i|
-      total += i.count_at_index
+      total &+= i.count_at_index
       if total >= count_at_percentile
         return highest_equivalent_value(i.value_from_index)
       end
@@ -203,7 +203,7 @@ struct HDRHistogram::Histogram
   end
 
   private def half_count_magnitude
-    largest_value_with_single_unit_resolution = 2 * 10**@significant_figures
+    largest_value_with_single_unit_resolution = 2 &* 10&**@significant_figures
     whole_count_magnitude =
       Math.log2(largest_value_with_single_unit_resolution).ceil
     whole_count_magnitude > 1 ? (whole_count_magnitude - 1).to_i32 : 0
@@ -219,24 +219,24 @@ struct HDRHistogram::Histogram
   end
 
   def value_from_index(index, sub_index)
-    sub_index.to_i64 << (index.to_i64 + unit_magnitude)
+    sub_index.to_i64.unsafe_shl(index.to_i64 &+ unit_magnitude)
   end
 
   private def size_of_equivalent_value_range(value)
     bucket_index, sub_bucket_index = bucket_indices(value)
     adjusted_bucket = bucket_index
     if sub_bucket_index >= sub_bucket_count
-      adjusted_bucket += 1
+      adjusted_bucket &+= 1
     end
-    1i64 << (unit_magnitude + adjusted_bucket)
+    1i64.unsafe_shl(unit_magnitude &+ adjusted_bucket)
   end
 
   def highest_equivalent_value(value)
-    next_non_equivalent(value) - 1
+    next_non_equivalent(value) &- 1
   end
 
   private def next_non_equivalent(value)
-    lowest_equivalent_value(value) + size_of_equivalent_value_range(value)
+    lowest_equivalent_value(value) &+ size_of_equivalent_value_range(value)
   end
 
   def lowest_equivalent_value(value)
@@ -245,14 +245,14 @@ struct HDRHistogram::Histogram
   end
 
   def median_equivalent_value(value)
-    lowest_equivalent_value(value) +
-      (size_of_equivalent_value_range(value) >> 1)
+    lowest_equivalent_value(value) &+
+      size_of_equivalent_value_range(value).unsafe_shr(1)
   end
 
   private def counts_index(bucket_index, sub_bucket_index)
-    base_index = (bucket_index + 1) << sub_bucket_half_count_magnitude
-    offset_in_bucket = sub_bucket_index - sub_bucket_half_count
-    base_index + offset_in_bucket
+    base_index = (bucket_index &+ 1).unsafe_shl(sub_bucket_half_count_magnitude)
+    offset_in_bucket = sub_bucket_index &- sub_bucket_half_count
+    base_index &+ offset_in_bucket
   end
 
   private def counts_index_for(value)
@@ -267,38 +267,12 @@ struct HDRHistogram::Histogram
   end
 
   private def bucket_index(value)
-    pow_to_ceiling = bit_size(value | sub_bucket_mask)
-    (pow_to_ceiling - unit_magnitude -
-      (sub_bucket_half_count_magnitude + 1).to_i64).to_i32
+    pow_to_ceiling = 64 &- (value | sub_bucket_mask).leading_zeros_count
+    (pow_to_ceiling &- unit_magnitude -
+      (sub_bucket_half_count_magnitude &+ 1).to_i64).to_i32
   end
 
   private def sub_bucket_index(value, index)
-    (value >> index + unit_magnitude).to_i32
-  end
-
-  private def bit_size(value : Int64)
-    # Seems llvm has a builtin for counting leading zeroes,
-    # llvm-clz. Dunno how to call that.
-    n = 0i64
-    while value >= 0x8000
-      value = value >> 16
-      n += 16
-    end
-    if value >= 0x80
-      value = value >> 8
-      n += 8
-    end
-    if value >= 0x8
-      value = value >> 4
-      n += 4
-    end
-    if value >= 0x2
-      value = value >> 2
-      n += 2
-    end
-    if value >= 0x1
-      n += 1
-    end
-    n
+    value.unsafe_shr(index &+ unit_magnitude).to_i32
   end
 end

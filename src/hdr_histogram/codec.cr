@@ -11,20 +11,20 @@ module HDRHistogram
       v = BigEndian.decode(Int8, io)
       value = Int64.new((v & 0x7F))
       while v & 0x80 != 0 && size < 9
-        offset = size * 7
+        offset = size &* 7
         v = BigEndian.decode(Int8, io)
         val = size == 8 ? Int64.new(v) : Int64.new((v & 0x7F))
-        value |= val << offset
-        size += 1
+        value |= val.unsafe_shl(offset)
+        size &+= 1
       end
-      {(value >> 1) ^ -(value & 1), size}
+      {(value.unsafe_shr 1) ^ -(value & 1), size}
     end
 
     def self.zigzag_encode(n, io)
-      n = n < 0 ? ((n + 1).abs.to_u32 << 1) + 1 : n.to_u32 << 1
+      n = n < 0 ? (n + 1).abs.to_u32.unsafe_shl(1) + 1 : n.to_u32.unsafe_shl(1)
       while true
         bits = UInt8.new(n & 0x7F)
-        n >>= 7
+        n = n.unsafe_shr(7)
         break if n == 0
         BigEndian.encode(bits | 0x80, io)
       end
@@ -36,7 +36,7 @@ module HDRHistogram
       negative_count = 0
       histogram.counts.each do |count|
         if count == 0
-          negative_count += 1
+          negative_count &+= 1
         else
           if negative_count > 0
             zigzag_encode(-negative_count, counts)
@@ -94,13 +94,13 @@ module HDRHistogram
       index = 0
       while internal_length > 0
         count, size = zigzag_decode(inflator)
-        internal_length -= size
+        internal_length &-= size
         if count < 0
-          index -= count
+          index &-= count
         else
           histogram.counts[index] = count
-          histogram.total_count += count
-          index += 1
+          histogram.total_count &+= count
+          index &+= 1
         end
       end
       histogram

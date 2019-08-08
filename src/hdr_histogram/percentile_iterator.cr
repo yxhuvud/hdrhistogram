@@ -24,7 +24,7 @@ struct HDRHistogram::PercentileIterator < HDRHistogram::AbstractIterator
       current_percentile = (100.0 * count_to_index.to_f64) / total_count
       if count_at_index != 0 && percentile_to_iterator_to <= current_percentile
         @percentile = percentile_to_iterator_to
-        half_distance = (2**(Math.log2(100.0 / (100.0 - percentile_to_iterator_to)).trunc) + 1).trunc
+        half_distance = (2&**(Math.log2(100.0 / (100.0 - percentile_to_iterator_to)).trunc) + 1).trunc
         percentile_reporting_ticks = ticks_per_half_distance * half_distance
         @percentile_to_iterator_to += 100.0 / percentile_reporting_ticks
         return true
