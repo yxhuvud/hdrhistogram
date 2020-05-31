@@ -28,11 +28,11 @@ struct HDRHistogram::Histogram
     @sub_bucket_half_count_magnitude = half_count_magnitude
     @unit_magnitude = unit_magnitude(min)
     @sub_bucket_count = 2 ** (sub_bucket_half_count_magnitude + 1)
-    @sub_bucket_half_count = sub_bucket_count / 2
+    @sub_bucket_half_count = sub_bucket_count // 2
     @sub_bucket_mask = (sub_bucket_count.to_i64 - 1) << unit_magnitude
 
     @bucket_count = buckets_needed(max)
-    @counts_size = (bucket_count + 1) * (sub_bucket_count / 2)
+    @counts_size = (bucket_count + 1) * (sub_bucket_count // 2)
     @total_count = 0i64
     @counts = Array(Int64).new(counts_size) { 0i64 }
   end
@@ -268,7 +268,7 @@ struct HDRHistogram::Histogram
 
   private def bucket_index(value)
     pow_to_ceiling = 64 &- (value | sub_bucket_mask).leading_zeros_count
-    (pow_to_ceiling &- unit_magnitude -
+    (pow_to_ceiling &- unit_magnitude &-
       (sub_bucket_half_count_magnitude &+ 1).to_i64).to_i32
   end
 
