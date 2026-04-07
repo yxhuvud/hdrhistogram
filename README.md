@@ -22,6 +22,7 @@ Supports:
 * Get value at percentile.
 * Get total count.
 * Get min, max, mean and std deviation.
+* Merging multiple series of measurements (having the same range and significant figures are strongly recommended)
 
 ## Installation
 
