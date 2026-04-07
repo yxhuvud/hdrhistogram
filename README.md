@@ -23,6 +23,7 @@ Supports:
 * Get total count.
 * Get min, max, mean and std deviation.
 * Merging multiple series of measurements (having the same range and significant figures are strongly recommended)
+* Persisting the values, in a format compatible with the main hdrhistogram v1 format
 
 ## Installation
 
